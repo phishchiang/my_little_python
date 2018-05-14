@@ -1,5 +1,6 @@
 #  Closure
 # A Closure closes over the free variable from their enviroment
+'''
 def out_func(msg):
   message = msg
 
@@ -10,9 +11,9 @@ def out_func(msg):
 
 hi_func = out_func('Hi')
 hi_func()
-
-
 '''
+
+
 import logging
 logging.basicConfig(filename='example_closure.log', level=logging.INFO)
 
@@ -34,4 +35,3 @@ sub_func = logger(sub)
 add_func(3,5)
 sub_func(10, 6)
 
-'''
