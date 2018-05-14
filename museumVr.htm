@@ -1,0 +1,495 @@
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="description" content="">
+		<meta name="author" content="">
+
+		<title>Museum of Virtual Realities</title>
+
+		<style>
+			* { box-sizing: border-box; }
+
+			html { overflow: hidden; }
+
+			body {
+				margin: 0;
+				padding: 0;
+				overflow: hidden;
+				font-family: Arial, sans-serif;
+				font-size: 13px;
+				line-height: 20px;
+				color: #333;
+				background: #bbb;
+			}
+
+			/* ---------------- */
+
+			.loader {
+				position: absolute;
+				top: 0;
+				width: 100%;
+				height: 100%;
+				text-align: center;
+
+				display: flex;
+				align-items: center;
+				justify-content: center;
+
+				transition: opacity 600ms;
+				font-weight: bold;
+			}
+		</style>
+
+	</head>
+
+	<body>
+
+		<div id="container"></div>
+
+		<div class="loader">
+			<div>
+				Loading...<br>
+				<span id="pctLoaded">0%</span>
+			</div>
+		</div>
+
+		<script src="https://cdn.rawgit.com/mrdoob/three.js/r92/build/three.js"></script>
+		<script src="https://cdn.rawgit.com/mrdoob/three.js/r92/examples/js/controls/OrbitControls.js"></script>
+		<script src="https://cdn.rawgit.com/mrdoob/three.js/r92/examples/js/vr/WebVR.js"></script>
+		<script src="https://cdn.rawgit.com/davidlyons/THREE.VRController/master/VRController.js"></script>
+		<script src="https://cdn.rawgit.com/mrdoob/three.js/r92/examples/js/Detector.js"></script>
+		<script src="https://cdn.rawgit.com/mrdoob/three.js/r92/examples/js/loaders/FBXLoader.js"></script>
+		<script src="https://cdn.rawgit.com/mrdoob/three.js/r92/examples/js/ParametricGeometries.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.0-0/dat.gui.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/17.1.1/Tween.min.js"></script>
+
+		<script>
+
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+			// var gui = new dat.GUI();
+
+			var container = document.getElementById( 'container' );
+
+			var scene = new THREE.Scene();
+
+			var renderer = new THREE.WebGLRenderer( { antialias: true } );
+			renderer.setClearColor( 0xbbbbbb, 1 );
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			container.appendChild( renderer.domElement );
+
+			// renderer.vr.enabled = true;
+			document.body.appendChild( WEBVR.createButton( renderer ) );
+
+			var camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, .1, 100000 );
+			// camera.position.y = 1.6;
+			
+			var camGroup = new THREE.Group();
+			// camGroup.position.z = 3;
+			// camGroup.position.set( 0, 1.6, 3 );
+			camGroup.position.set( 0, 10.6, 200 );
+
+			camera.position.set( 100, 250, -200 );
+			// camGroup.add( camera );
+			scene.add( camGroup );
+
+			var controls = new THREE.OrbitControls( camera, renderer.domElement );
+			controls.target.z = -3;
+
+			var aLight = new THREE.AmbientLight( 0x666666 );
+			scene.add( aLight );
+
+			var dLight1 = new THREE.DirectionalLight( 0xffffff, 0.6 );
+			dLight1.position.set( 1, 2, 1 ).multiplyScalar( 50 );
+			scene.add( dLight1 );
+
+			var dLight2 = new THREE.DirectionalLight( 0xffffff, 0.6 );
+			dLight2.position.set( -1, -2, -1 ).multiplyScalar( 50 );
+			scene.add( dLight2 );
+
+			// var dlh1 = new THREE.DirectionalLightHelper( dLight1, 10 );
+			// scene.add( dlh1 );
+
+			// var dlh2 = new THREE.DirectionalLightHelper( dLight2, 10 );
+			// scene.add( dlh2 );
+
+			// var gh = new THREE.GridHelper( 2, 10, 0x333333, 0x888888 );
+			// scene.add( gh );
+
+			var fbxLoader = new THREE.FBXLoader();
+
+			// --------------------------------------------------------------
+
+			var pctLoaded = document.querySelector('#pctLoaded');
+			var loaderdom = document.querySelector('.loader');
+
+			THREE.DefaultLoadingManager.onProgress = function ( url, itemsLoaded, itemsTotal ) {
+				// console.log( 'Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.' );
+				var pct = Math.floor( itemsLoaded / itemsTotal * 100 ) + '%';
+				pctLoaded.textContent = pct;
+			};
+
+			THREE.DefaultLoadingManager.onLoad = function ( ) {
+				// console.log('Loading complete!');
+				// document.body.classList.add('loaded');
+				// loop();
+
+				setTimeout(function(){
+					loaderdom.parentNode.removeChild( loaderdom );
+				}, 500 );
+
+				arrow.add( camera );
+
+				var i = 0;
+				setInterval(function(){
+					moveToFace(i);
+					i -= 2;
+				}, 40);
+			};
+
+			// --------------------------------------------------------------
+
+			var arrowGeo = new THREE.CylinderBufferGeometry( 0, 20, 40, 4 );
+			arrowGeo.rotateX( Math.PI / 2 );
+			arrowGeo.rotateZ( Math.PI / 4 );
+			arrowGeo.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, 20 ) );
+			var arrowMat = new THREE.MeshPhongMaterial({ color: 0x00ff00, flatShading: true });
+			var arrow = window.arrow = new THREE.Mesh( arrowGeo, arrowMat );
+			scene.add( arrow );
+			arrow.add( new THREE.AxesHelper( 80 ) );
+			arrow.visible = false;
+
+			var sphereMat = new THREE.MeshNormalMaterial();
+			var sphereGeo = new THREE.SphereBufferGeometry( 4 );
+			var sphere = window.sphere = new THREE.Mesh( sphereGeo, sphereMat );
+			scene.add( sphere );
+			sphere.visible = false;
+
+			// --------------------------------------------------------------
+
+			var textureLoader = new THREE.TextureLoader();
+
+			var cubesMat = new THREE.MeshBasicMaterial({
+				side: THREE.DoubleSide,
+				map: textureLoader.load('models/phish-bake/cubes_01.jpg')
+			});
+
+			var floorMat = new THREE.MeshBasicMaterial({
+				side: THREE.DoubleSide,
+				map: textureLoader.load('models/phish-bake/floor_01.jpg')
+			});
+
+			fbxLoader.load('models/phish-bake/mobius.fbx',function(fbx){
+				var mobius = fbx.children[0];
+
+				var cubes = mobius.getObjectByName('cubes');
+				var floor = mobius.getObjectByName('floor');
+
+				cubes.material = cubesMat;
+				floor.material = floorMat;
+
+				scene.add( mobius );
+			});
+
+			fbxLoader.load('models/normals.fbx',function(fbx){
+				var normals = fbx.children[0];
+
+				// --------------------------------------------------
+
+				// var normalsMat = new THREE.MeshNormalMaterial({
+				// 	depthTest: false,
+				// 	transparent: true,
+				// 	opacity: 0.6
+				// });
+
+				// normals.traverse(function(obj){
+				// 	if (obj.isMesh) {
+				// 		obj.material = normalsMat;
+				// 	}
+				// });
+
+				// normals.renderOrder = 1;
+				// scene.add( normals );
+
+				// --------------------------------------------------
+
+				// var vnh = new THREE.VertexNormalsHelper( normals, 15, 0x333333 );
+				// scene.add( vnh );
+
+				// --------------------------------------------------
+
+				// var wireframe = new THREE.WireframeGeometry( normals.geometry );
+				// line = new THREE.LineSegments( wireframe );
+				// line.material.color.setHex( 0x555555 );
+				// scene.add( line );
+
+				// --------------------------------------------------
+
+				var normalGeo = new THREE.Geometry();
+				normalGeo.fromBufferGeometry( normals.geometry );
+
+				computeFaceCentroids( normalGeo );
+
+				var moveToFace = window.moveToFace = function( i ) {
+
+					var index = mod( i, normalGeo.faces.length );
+					var targetIndex = mod( (i+6), normalGeo.faces.length );
+
+					var distanceFromSurface = 40;
+
+					var face = normalGeo.faces[ index ];
+					arrow.position.copy( face.centroid );
+					arrow.position.add( face.normal.clone().multiplyScalar( distanceFromSurface ) );
+
+					var faceTarget = normalGeo.faces[ targetIndex ];
+					sphere.position.copy( faceTarget.centroid );
+					sphere.position.add( faceTarget.normal.clone().multiplyScalar( distanceFromSurface ) );
+
+					var mat = new THREE.Matrix4();
+					mat.lookAt( face.centroid, faceTarget.centroid, face.normal );
+					arrow.rotation.setFromRotationMatrix( mat );
+
+				}
+
+				// -------
+
+			});
+
+			// --------------------------------------------------------------
+
+			// parametric mobius strip
+
+			// var mat = new THREE.MeshPhongMaterial({ side: THREE.DoubleSide });
+			// // var geo = new THREE.ParametricBufferGeometry( THREE.ParametricGeometries.mobius3d, 50, 30 );
+			// var geo = new THREE.ParametricGeometry( THREE.ParametricGeometries.mobius, 1, 30 );
+			// geo.applyMatrix( new THREE.Matrix4().makeScale( -1, 1, 1 ) );
+			// var mesh = new THREE.Mesh( geo, mat );
+			// mesh.rotation.x = - Math.PI / 2;
+			// mesh.scale.multiplyScalar( 30 );
+			// scene.add( mesh );
+
+			// var fnh = new THREE.FaceNormalsHelper( mesh, 20 );
+			// scene.add( fnh );
+
+			// var vnh = new THREE.VertexNormalsHelper( mesh, 20 );
+			// scene.add( vnh );
+
+			// var wireframe = new THREE.WireframeGeometry( geo );
+			// line = new THREE.LineSegments( wireframe );
+			// line.material.color.setHex( 0x555555 );
+			// mesh.add( line );
+
+			// --------------------------------------------------------------
+
+			// VRController
+
+			var blue = new THREE.Color(0x0c89c4);
+			var green = new THREE.Color(0x0cc437);
+
+			function primaryDown(e) {
+				var controller = e.target;
+				if ( controller.userData.mesh ) {
+					controller.userData.mesh.material.color = green;
+				}
+			}
+
+			function primaryUp(e) {
+				var controller = e.target;
+				if ( controller.userData.mesh ) {
+					controller.userData.mesh.material.color = blue;
+				}
+			}
+
+			// var touchIsDown = false;
+			// var axes = new THREE.Vector2();
+			// var axesOnDown = new THREE.Vector2();
+			// var delta = new THREE.Vector2();
+
+			// function primaryTouchDown(e){
+			// 	var controller = e.target;
+			// 	touchIsDown = true;
+			// 	axesOnDown.fromArray( controller.getAxes('thumbpad').value );
+			// }
+
+			// function primaryTouchUp(e){
+			// 	touchIsDown = false;
+			// }
+
+			// function axesChanged(e) {
+			// 	var controller = e.target;
+			// 	if ( touchIsDown ) {
+			// 		axes.fromArray( controller.getAxes('thumbpad').value );
+			// 		delta.subVectors( axes, axesOnDown );
+			// 	}
+			// }
+
+			var controllerConnected = function( event ) {
+
+				var controller = event.detail;
+				camera.parent.add( controller );
+
+				// console.log('controller connected, dof: ' + controller.dof);
+
+				controller.standingMatrix = renderer.vr.getStandingMatrix();
+				// controller.head = camera;
+
+				//
+
+				// if ( controller.dof >= 3 ) {
+
+					var laserRadius = 0.001;
+					var laserLength = 1;
+					var laserGeo = new THREE.CylinderBufferGeometry( laserRadius, laserRadius, laserLength, 8, 1, true );
+					// set origin to bottom side for scale.y
+					laserGeo.applyMatrix( new THREE.Matrix4().makeTranslation( 0, laserLength/2, 0 ) );
+					var laserMat = new THREE.MeshBasicMaterial({ color: blue });
+
+					var laser = new THREE.Mesh( laserGeo, laserMat );
+					laser.rotation.x = - Math.PI / 2;
+					laser.userData.defaultLength = 6;
+					laser.scale.y = laser.userData.defaultLength;
+
+					laser.userData.length = new THREE.Vector3();
+
+					controller.add( laser );
+					controller.userData.laser = laser;
+
+					//
+
+					switch ( controller.style ) {
+
+						// case 'daydream':
+						// 	fbxLoader.load( '../assets/models/daydream-controller/daydream.fbx', function ( fbx ) {
+						// 		var daydream = fbx.children[0];
+						// 		controller.add( daydream );
+
+						// 		var pointPose = new THREE.Group();
+						// 		pointPose.position.z = -0.053;
+						// 		daydream.add( pointPose );
+						// 		pointPose.add( controller.userData.laser );
+						// 	});
+						// 	break;
+
+						// case 'oculus-go':
+						// 	fbxLoader.load('../assets/models/oculus-go/pacific_lp.fbx', function( fbx ) {
+						// 		var goController = fbx.children[0];
+						// 		controller.add( goController );
+						// 	});
+						// 	break;
+
+						default:
+							var handGeo = new THREE.BoxBufferGeometry( 0.08, 0.08, 0.08 );
+							var handMat = new THREE.MeshPhongMaterial({ color: blue });
+							var handMesh = new THREE.Mesh( handGeo, handMat );
+							controller.userData.mesh = handMesh;
+							controller.add( handMesh );
+							break;
+
+					}
+
+				// }
+
+				//
+
+				controller.addEventListener('primary press began', primaryDown);
+				controller.addEventListener('primary press ended', primaryUp);
+
+				// controller.addEventListener('primary touch began', primaryTouchDown);
+				// controller.addEventListener('primary touch ended', primaryTouchUp);
+
+				// controller.addEventListener('thumbpad axes changed', axesChanged);
+
+				controller.addEventListener( 'disconnected', function( event ) {
+					// console.log('controller disconnected');
+					if ( controller.parent ) {
+						controller.parent.remove( controller );
+					}
+				});
+
+			};
+
+			window.addEventListener( 'vr controller connected', controllerConnected );
+
+			// --------------------------------------------------------------
+
+			window.addEventListener( 'resize', resize, false );
+			function resize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+			}
+
+			renderer.animate( loop );
+
+			function loop() {
+				// TWEEN.update();
+				controls.update();
+				THREE.VRController.update();
+				renderer.render( scene, camera );
+			}
+
+			// function tweenProp( obj, prop, targetValue ) {
+			// 	var target = {};
+			// 	target[prop] = targetValue;
+
+			// 	var tween = new TWEEN.Tween( obj )
+			// 		.to( target, 800 )
+			// 		.easing( TWEEN.Easing.Elastic.Out )
+			// 		.yoyo( true )
+			// 		.delay( 800 )
+			// 		.repeat( Infinity )
+			// 		.start();
+			// }
+
+			// https://gist.github.com/AndrewRayCode/c9c41b549d0b1e97da8890a79e3ab8d0
+
+			// Face centroids were removed from Three.js some time ago.
+			// These function modify faces **in place** to add a `.centroid` property,
+			// which is a `Vector3` representing the center of that face. 
+
+			function computeFaceCentroids( geometry ) {
+
+				var f, fl, face;
+
+				for ( f = 0, fl = geometry.faces.length; f < fl; f ++ ) {
+
+					face = geometry.faces[ f ];
+					face.centroid = new THREE.Vector3( 0, 0, 0 );
+
+					if ( face instanceof THREE.Face3 ) {
+
+						face.centroid.add( geometry.vertices[ face.a ] );
+						face.centroid.add( geometry.vertices[ face.b ] );
+						face.centroid.add( geometry.vertices[ face.c ] );
+						face.centroid.divideScalar( 3 );
+
+					} else if ( face instanceof THREE.Face4 ) {
+
+						face.centroid.add( geometry.vertices[ face.a ] );
+						face.centroid.add( geometry.vertices[ face.b ] );
+						face.centroid.add( geometry.vertices[ face.c ] );
+						face.centroid.add( geometry.vertices[ face.d ] );
+						face.centroid.divideScalar( 4 );
+
+					}
+
+				}
+
+			}
+
+			function mod(v, l) {
+				while (v < 0) {
+					v += l;
+				}
+				return v % l;
+			}
+
+		</script>
+
+	</body>
+</html>
